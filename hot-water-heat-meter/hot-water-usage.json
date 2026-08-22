@@ -1,0 +1,349 @@
+[
+  {
+    "id": "042c9e2d2c4e8da5",
+    "type": "subflow",
+    "name": "Hot water usage",
+    "info": "",
+    "category": "",
+    "in": [],
+    "out": [
+      {
+        "x": 1000,
+        "y": 120,
+        "wires": [
+          {
+            "id": "269947469705ad59",
+            "port": 0
+          }
+        ]
+      }
+    ],
+    "env": [
+      {
+        "name": "usageCorrectionCoef",
+        "type": "num",
+        "value": "1"
+      },
+      {
+        "name": "accumulatedFlowId",
+        "type": "str",
+        "value": ""
+      },
+      {
+        "name": "coldTempId",
+        "type": "str",
+        "value": ""
+      },
+      {
+        "name": "hotTempId",
+        "type": "str",
+        "value": ""
+      }
+    ],
+    "meta": {},
+    "color": "#DDAA99"
+  },
+  {
+    "id": "8c4c3da6c629b05e",
+    "type": "change",
+    "z": "042c9e2d2c4e8da5",
+    "name": "get previous",
+    "rules": [
+      {
+        "t": "set",
+        "p": "previous",
+        "pt": "msg",
+        "to": "accumulatedFlow",
+        "tot": "flow"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 450,
+    "y": 60,
+    "wires": [
+      [
+        "e6098959f5c8a60d"
+      ]
+    ]
+  },
+  {
+    "id": "25c97f9b6081c84f",
+    "type": "switch",
+    "z": "042c9e2d2c4e8da5",
+    "name": "is valid",
+    "property": "previous",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "istype",
+        "v": "number",
+        "vt": "number"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 810,
+    "y": 60,
+    "wires": [
+      [
+        "bb03a130b0bb6509"
+      ]
+    ]
+  },
+  {
+    "id": "bb03a130b0bb6509",
+    "type": "change",
+    "z": "042c9e2d2c4e8da5",
+    "name": "get diff",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "payload - previous",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 950,
+    "y": 60,
+    "wires": [
+      [
+        "652dddce188bf0ac"
+      ]
+    ]
+  },
+  {
+    "id": "cc94723a58b78aef",
+    "type": "delay",
+    "z": "042c9e2d2c4e8da5",
+    "name": "wait for hot temperature (example: 15 s)",
+    "pauseType": "delay",
+    "timeout": "15",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 320,
+    "y": 120,
+    "wires": [
+      [
+        "f941970d7c9b91aa"
+      ]
+    ]
+  },
+  {
+    "id": "269947469705ad59",
+    "type": "change",
+    "z": "042c9e2d2c4e8da5",
+    "name": "Calculate hot water usage",
+    "rules": [
+      {
+        "t": "set",
+        "p": "usageCorrectionCoef",
+        "pt": "msg",
+        "to": "usageCorrectionCoef",
+        "tot": "env"
+      },
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "(\t    $specificHeatCapacity := 4184; /* J / (kg * K) */\t    $correction := usageCorrectionCoef; \t    $diffT := hotTemperature - coldTemperature;\t    $eInJ := payload * $specificHeatCapacity * $diffT;\t    $eInKWh := $eInJ / 1000 / 3600;\t    - $eInKWh * $correction;\t)",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 780,
+    "y": 120,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "5736a6f6ec18c034",
+    "type": "switch",
+    "z": "042c9e2d2c4e8da5",
+    "name": "is number",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "istype",
+        "v": "number",
+        "vt": "number"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 300,
+    "y": 60,
+    "wires": [
+      [
+        "8c4c3da6c629b05e"
+      ]
+    ]
+  },
+  {
+    "id": "e6098959f5c8a60d",
+    "type": "change",
+    "z": "042c9e2d2c4e8da5",
+    "name": "set accumulatedFlow",
+    "rules": [
+      {
+        "t": "set",
+        "p": "accumulatedFlow",
+        "pt": "flow",
+        "to": "payload",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 640,
+    "y": 60,
+    "wires": [
+      [
+        "25c97f9b6081c84f"
+      ]
+    ]
+  },
+  {
+    "id": "652dddce188bf0ac",
+    "type": "switch",
+    "z": "042c9e2d2c4e8da5",
+    "name": "",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "gt",
+        "v": "0",
+        "vt": "num"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 1090,
+    "y": 60,
+    "wires": [
+      [
+        "cc94723a58b78aef"
+      ]
+    ]
+  },
+  {
+    "id": "f941970d7c9b91aa",
+    "type": "api-current-state",
+    "z": "042c9e2d2c4e8da5",
+    "name": "add hot temperature",
+    "server": "d0351e7819283592",
+    "version": 3,
+    "outputs": 1,
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "${hotTempId}",
+    "state_type": "str",
+    "blockInputOverrides": true,
+    "outputProperties": [
+      {
+        "property": "hotTemperature",
+        "propertyType": "msg",
+        "value": "number",
+        "valueType": "entityState"
+      }
+    ],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 520,
+    "y": 120,
+    "wires": [
+      [
+        "269947469705ad59"
+      ]
+    ]
+  },
+  {
+    "id": "745cb6e6dad6de5b",
+    "type": "server-state-changed",
+    "z": "042c9e2d2c4e8da5",
+    "name": "Accumulated flow",
+    "server": "d0351e7819283592",
+    "version": 6,
+    "outputs": 1,
+    "exposeAsEntityConfig": "",
+    "entities": {
+      "entity": [
+        "${accumulatedFlowId}"
+      ],
+      "substring": [],
+      "regex": []
+    },
+    "outputInitially": true,
+    "stateType": "str",
+    "ifState": "",
+    "ifStateType": "str",
+    "ifStateOperator": "is",
+    "outputOnlyOnStateChange": true,
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "ignorePrevStateNull": false,
+    "ignorePrevStateUnknown": false,
+    "ignorePrevStateUnavailable": false,
+    "ignoreCurrentStateUnknown": true,
+    "ignoreCurrentStateUnavailable": true,
+    "outputProperties": [
+      {
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "number",
+        "valueType": "entityState"
+      },
+      {
+        "property": "coldTemperature",
+        "propertyType": "msg",
+        "value": "$number($entities($env('coldTempId')).state)",
+        "valueType": "jsonata"
+      }
+    ],
+    "x": 110,
+    "y": 60,
+    "wires": [
+      [
+        "5736a6f6ec18c034"
+      ]
+    ]
+  }
+]

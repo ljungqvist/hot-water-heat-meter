@@ -1,0 +1,444 @@
+[
+  {
+    "id": "85c86590a261c1bf",
+    "type": "subflow",
+    "name": "Energy balance",
+    "info": "",
+    "category": "",
+    "in": [
+      {
+        "x": 740,
+        "y": 20,
+        "wires": [
+          {
+            "id": "7a9699559008acb4"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 1520,
+        "y": 60,
+        "wires": [
+          {
+            "id": "5e03a014f96f21ca",
+            "port": 0
+          },
+          {
+            "id": "bd73ad9d3d544563",
+            "port": 0
+          }
+        ]
+      }
+    ],
+    "env": [
+      {
+        "name": "lossPower",
+        "type": "num",
+        "value": "100"
+      },
+      {
+        "name": "estimatedFullEnergy",
+        "type": "num",
+        "value": "20"
+      },
+      {
+        "name": "inputEnergyId",
+        "type": "str",
+        "value": ""
+      }
+    ],
+    "meta": {},
+    "color": "#DDAA99"
+  },
+  {
+    "id": "5e03a014f96f21ca",
+    "type": "change",
+    "z": "85c86590a261c1bf",
+    "name": "set water energy",
+    "rules": [
+      {
+        "t": "set",
+        "p": "#:(store)::waterEnergy",
+        "pt": "flow",
+        "to": "payload",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 1350,
+    "y": 60,
+    "wires": [
+      [
+        "52d50ef7f9de54e0"
+      ]
+    ]
+  },
+  {
+    "id": "b5b48ed2eba04429",
+    "type": "change",
+    "z": "85c86590a261c1bf",
+    "name": "add water energy",
+    "rules": [
+      {
+        "t": "set",
+        "p": "waterEnergy",
+        "pt": "msg",
+        "to": "#:(store)::waterEnergy",
+        "tot": "flow"
+      },
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "$min([\t    0, \t    (payload ? payload : 0) + (waterEnergy ? waterEnergy : 0)\t])",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 1110,
+    "y": 60,
+    "wires": [
+      [
+        "5e03a014f96f21ca"
+      ]
+    ]
+  },
+  {
+    "id": "021054a35017f291",
+    "type": "switch",
+    "z": "85c86590a261c1bf",
+    "name": "previous is number",
+    "property": "previous",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "istype",
+        "v": "number",
+        "vt": "number"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 310,
+    "y": 200,
+    "wires": [
+      [
+        "0c917e410b98dce9"
+      ]
+    ]
+  },
+  {
+    "id": "71e58d38ba4b272f",
+    "type": "change",
+    "z": "85c86590a261c1bf",
+    "name": "get set previous",
+    "rules": [
+      {
+        "t": "set",
+        "p": "previous",
+        "pt": "msg",
+        "to": "inputEnergy",
+        "tot": "flow"
+      },
+      {
+        "t": "set",
+        "p": "inputEnergy",
+        "pt": "flow",
+        "to": "payload",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 460,
+    "y": 140,
+    "wires": [
+      [
+        "021054a35017f291"
+      ]
+    ]
+  },
+  {
+    "id": "0c917e410b98dce9",
+    "type": "change",
+    "z": "85c86590a261c1bf",
+    "name": "get diff",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "payload - previous",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 490,
+    "y": 200,
+    "wires": [
+      [
+        "e1d4420976833710"
+      ]
+    ]
+  },
+  {
+    "id": "0de3ed16b4aeb419",
+    "type": "inject",
+    "z": "85c86590a261c1bf",
+    "name": "every 36 s",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "36",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "#:(store)::waterEnergy",
+    "payloadType": "flow",
+    "x": 130,
+    "y": 60,
+    "wires": [
+      [
+        "735513bf4b272e8f"
+      ]
+    ]
+  },
+  {
+    "id": "735513bf4b272e8f",
+    "type": "change",
+    "z": "85c86590a261c1bf",
+    "name": "Set standby heat loss",
+    "rules": [
+      {
+        "t": "set",
+        "p": "lossPower",
+        "pt": "msg",
+        "to": "lossPower",
+        "tot": "env"
+      },
+      {
+        "t": "set",
+        "p": "estimatedFullEnergy",
+        "pt": "msg",
+        "to": "estimatedFullEnergy",
+        "tot": "env"
+      },
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "(    \t    $waterEnergy := (payload ? payload : 0);\t    $capacity := estimatedFullEnergy; /* kWh */\t    $interval := 36 /* s */ / 3600; /* h */\t    - ($capacity + $waterEnergy) / $capacity * (lossPower / 1000)  *$interval;\t)",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 530,
+    "y": 60,
+    "wires": [
+      [
+        "7a9699559008acb4"
+      ]
+    ]
+  },
+  {
+    "id": "32a2cf98e962099f",
+    "type": "switch",
+    "z": "85c86590a261c1bf",
+    "name": "is number",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "istype",
+        "v": "number",
+        "vt": "number"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 280,
+    "y": 140,
+    "wires": [
+      [
+        "71e58d38ba4b272f"
+      ]
+    ]
+  },
+  {
+    "id": "7a9699559008acb4",
+    "type": "function",
+    "z": "85c86590a261c1bf",
+    "name": "",
+    "func": "var queue = flow.get('queue');\nif (queue === undefined) {\n    queue = {\n        messages: [],\n        state: 'open',\n    };\n    flow.set('queue', queue);\n}\nif (msg.topic == 'control') {\n    switch (msg.payload) {\n        case 'open':\n            var oldMsg = queue.messages.shift();\n            if (oldMsg === undefined) {\n                queue.state = 'open';\n                node.status({text: `Open (${queue.messages.length})`});\n            }\n            else {\n                node.status({text: `Closed (${queue.messages.length})`});\n                node.send(oldMsg);\n            }\n            break;\n        case 'close':\n            queue.state = 'close';\n            node.status({text: `Closed (${queue.messages.length})`});\n            break;\n    }\n}\nelse {\n    switch (queue.state) {\n        case 'open':\n            queue.state = 'closed';\n            node.status({text: `Closed (${queue.messages.length})`});\n            return msg;\n        case 'closed':\n            queue.messages.push(msg);\n            node.status({text: `Closed (${queue.messages.length})`});\n            break;\n    }\n}",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "var queue = context.get('queue');\nif (queue === undefined) {\n    queue = { messages: [], state: 'open' };\n    context.set('queue', queue);\n}\nnode.status({text: `Open (${queue.messages.length})`});",
+    "finalize": "",
+    "libs": [],
+    "x": 920,
+    "y": 60,
+    "wires": [
+      [
+        "b5b48ed2eba04429"
+      ]
+    ],
+    "icon": "node-red/serial.svg"
+  },
+  {
+    "id": "52d50ef7f9de54e0",
+    "type": "change",
+    "z": "85c86590a261c1bf",
+    "name": "",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "open",
+        "tot": "str"
+      },
+      {
+        "t": "set",
+        "p": "topic",
+        "pt": "msg",
+        "to": "control",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 1120,
+    "y": 140,
+    "wires": [
+      [
+        "7a9699559008acb4"
+      ]
+    ]
+  },
+  {
+    "id": "bd73ad9d3d544563",
+    "type": "change",
+    "z": "85c86590a261c1bf",
+    "name": "set water energy",
+    "rules": [
+      {
+        "t": "set",
+        "p": "#:(store)::waterEnergy",
+        "pt": "flow",
+        "to": "payload",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 1370,
+    "y": 180,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "e1d4420976833710",
+    "type": "switch",
+    "z": "85c86590a261c1bf",
+    "name": "> 0",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "gt",
+        "v": "0",
+        "vt": "num"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 630,
+    "y": 200,
+    "wires": [
+      [
+        "7a9699559008acb4"
+      ]
+    ]
+  },
+  {
+    "id": "0744ca0137bd4b9a",
+    "type": "server-state-changed",
+    "z": "85c86590a261c1bf",
+    "name": "Input energy",
+    "server": "d0351e7819283592",
+    "version": 6,
+    "outputs": 1,
+    "exposeAsEntityConfig": "",
+    "entities": {
+      "entity": [
+        "${inputEnergyId}"
+      ],
+      "substring": [],
+      "regex": []
+    },
+    "outputInitially": true,
+    "stateType": "str",
+    "ifState": "",
+    "ifStateType": "str",
+    "ifStateOperator": "is",
+    "outputOnlyOnStateChange": true,
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "ignorePrevStateNull": false,
+    "ignorePrevStateUnknown": false,
+    "ignorePrevStateUnavailable": false,
+    "ignoreCurrentStateUnknown": true,
+    "ignoreCurrentStateUnavailable": true,
+    "outputProperties": [
+      {
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "number",
+        "valueType": "entityState"
+      }
+    ],
+    "x": 110,
+    "y": 140,
+    "wires": [
+      [
+        "32a2cf98e962099f"
+      ]
+    ]
+  }
+]

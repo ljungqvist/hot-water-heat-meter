@@ -1,0 +1,77 @@
+esphome:
+  name: water-heater
+  friendly_name: Water heater
+
+esp32:
+  board: esp32-poe-iso
+  framework:
+    type: arduino
+
+ethernet:
+  type: LAN8720
+  mdc_pin: GPIO23
+  mdio_pin: GPIO18
+  clk_mode: GPIO17_OUT
+  phy_addr: 0
+  power_pin: GPIO12
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+    password: ""
+
+# UFM-01: 5 V + GND, 10 µF across 5 V–GND.
+# ESP32 TX (GPIO32) → UFM RX.
+# UFM TX → 1 kΩ → ESP32 RX (GPIO35) → 2 kΩ → GND (divider).
+# UART: 2400 8E1.
+uart:
+  - id: uart_bus
+    tx_pin: GPIO32
+    rx_pin: GPIO35
+    baud_rate: 2400
+    parity: EVEN
+    stop_bits: 1
+
+ufm01:
+  id: ufm01_component
+  uart_id: uart_bus
+
+# DS18B20: 3.3 V + GND, data GPIO16, 5.1 kΩ pull-up to 3.3 V.
+one_wire:
+  - platform: gpio
+    pin: GPIO16
+    id: bus1
+
+sensor:
+  - platform: dallas_temp
+    name: Hot temperature
+    update_interval: 1.9s
+    one_wire_id: bus1
+
+  - platform: ufm01
+    ufm01_id: ufm01_component
+    accumulated_flow:
+      name: Accumulated flow
+    flow:
+      name: Flow
+    temperature:
+      name: Cold temperature
+
+binary_sensor:
+  - platform: ufm01
+    ufm01_id: ufm01_component
+    ufc_chip_error:
+      name: UFC chip error
+      entity_category: diagnostic
+    flow_direction_wrong:
+      name: Flow direction wrong
+      entity_category: diagnostic
+    empty_tube:
+      name: Empty tube
+      entity_category: diagnostic
+    flow_rate_out_of_range:
+      name: Flow rate out of range
+      entity_category: diagnostic
