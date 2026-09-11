@@ -6,11 +6,11 @@ This build estimates both with a heat meter on the pipes and an energy balance o
 
 The recipe below is one working installation: an ESP32, a water flow meter, a temperature sensor, an input energy sensor, and two Node-RED subflows. I run this on two tanks; the YAML uses generic names.
 
-![A small wooden box with two red seven-segment displays reading 86.7 and 0.89, and a green button on top](hot-water-heat-meter/charge-display.jpg)
+![A small wooden box with two red seven-segment displays reading 86.7 and 0.89, and a green button on top](img/charge-display.jpg)
 
 *86.7 % of a tank left. The box is the easy part — this article is about where that number comes from. The second display and the green button are a bonus; they come back at the end.*
 
-![Two days of how full the tank was: up from 45 % to nearly 100 %, down in steps, and up again](hot-water-heat-meter/charge-two-days.png)
+![Two days of how full the tank was: up from 45 % to nearly 100 %, down in steps, and up again](img/charge-two-days.png)
 
 *The same number over two days. The steps down are showers, morning and evening. The stepped climb through the first night is the heater on the cheap night tariff; the long smooth climbs after midday are solar. The gentle sag through the second night, with no heating at all, is standby heat loss.*
 
@@ -20,7 +20,7 @@ The recipe below is one working installation: an ESP32, a water flow meter, a te
 
 The model keeps one running account from three terms:
 
-![Energy balance: input energy heats the water heater from below, hot water usage leaves the top, standby heat loss goes out through the walls](hot-water-heat-meter/energy-balance-cartoon.png)
+![Energy balance: input energy heats the water heater from below, hot water usage leaves the top, standby heat loss goes out through the walls](img/energy-balance-cartoon.png)
 
 - **Input energy** — electrical energy into the water heater. One `total_increasing` sensor in kWh. I built that from three Shelly Pro 2PMs (one per heating element / phase). The model does not care how you build that sensor.
 - **Hot water usage** — thermal energy carried out in the drawn water, relative to the cold water that replaced it: \(E = m\,c\,\Delta T\).
@@ -56,15 +56,15 @@ I had an electrician do the mains and a plumber do the tank connections.
 | 5.1 kΩ | Dallas pull-up to 3.3 V |
 | Energy sensor, increasing, in kWh | **Input energy** (I used three Shelly Pro 2PM) |
 
-![The UFM-01, a small black oval module, fitted inline in a copper pipe between two brass compression fittings, with a brass mixing valve above it](hot-water-heat-meter/ufm-on-cold-inlet.jpg)
+![The UFM-01, a small black oval module, fitted inline in a copper pipe between two brass compression fittings, with a brass mixing valve above it](img/ufm-on-cold-inlet.jpg)
 
 *The UFM-01 — the black oval — inline on the cold inlet between two compression fittings. The mixer is the brass and black assembly at the top left, so the meter sits upstream of it on the common cold supply.*
 
-![A DS18B20 sensor held against a copper pipe by a stainless hose clamp, just below a brass mixing valve](hot-water-heat-meter/dallas-on-hot-pipe.jpg)
+![A DS18B20 sensor held against a copper pipe by a stainless hose clamp, just below a brass mixing valve](img/dallas-on-hot-pipe.jpg)
 
 *The DS18B20 clamped against the hot pipe just below the mixer. A sensor inside the pipe would read faster and truer; this is what I have.*
 
-![A small blue perfboard carrying three resistors, wired to an Olimex ESP32-PoE board lying beside it on graph paper](hot-water-heat-meter/divider-and-pullup.jpg)
+![A small blue perfboard carrying three resistors, wired to an Olimex ESP32-PoE board lying beside it on graph paper](img/divider-and-pullup.jpg)
 
 *Where the passives live: the UART divider and the Dallas pull-up on a scrap of perfboard, wired out beside the ESP32-PoE, before any of it went into an enclosure. The silkscreen reads plain `ESP32-PoE` — the ISO variant is pin-identical if that is what you have.*
 
@@ -108,7 +108,7 @@ Same idea on any other board; only the GPIO numbers change.
 
 The [`ufm01`](https://esphome.io/components/ufm01/) component ships with ESPHome, so there is nothing external to add — but you want **2026.8.1 or newer**, which is what I run. Older releases are missing the startup reset retry that gets the meter talking again after a reboot.
 
-The whole config is [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml) — self-contained, no packages, generic names. Pins are for the ESP32-PoE, and the other boards in that family share the pinout, so the same `esp32-poe` board id covers them. Set an OTA password and API encryption before the device is on the network.
+The whole config is [`water-heater.yaml`](config/water-heater.yaml) — self-contained, no packages, generic names. Pins are for the ESP32-PoE, and the other boards in that family share the pinout, so the same `esp32-poe` board id covers them. Set an OTA password and API encryption before the device is on the network.
 
 Most of that file is boilerplate: board, Ethernet, `logger`, `api`, `ota`. This is the part that carries the design.
 
@@ -168,7 +168,7 @@ If flow ever goes unavailable while `empty_tube` is *not* set, the meter has sto
 
 ## The model in Node-RED
 
-You need the Home Assistant WebSocket nodes (`node-red-contrib-home-assistant-websocket`). Import [`hot-water-usage.json`](hot-water-heat-meter/hot-water-usage.json) and [`energy-balance.json`](hot-water-heat-meter/energy-balance.json). After import, set the Home Assistant server on the HA nodes inside each subflow, then set the env vars below.
+You need the Home Assistant WebSocket nodes (`node-red-contrib-home-assistant-websocket`). Import [`hot-water-usage.json`](config/hot-water-usage.json) and [`energy-balance.json`](config/energy-balance.json). After import, set the Home Assistant server on the HA nodes inside each subflow, then set the env vars below.
 
 Energy balance keeps the account in a context store named `store`, so that it survives a restart of Node-RED. Stock Node-RED has no such store — context is in memory only — so add one to `settings.js` before you import, and restart:
 
@@ -189,15 +189,15 @@ The JSON files are the two subflows only. You still wire them on the flow:
 4. Add a change node: `100 + 100 * payload / estimatedFullEnergy`.
 5. Add an `ha-sensor`: `sensor.water_heater_charge` (%).
 
-![Node-RED subflow: accumulated flow, a series of checks, a 15 s delay, then hot temperature and the energy calculation](hot-water-heat-meter/node-red-hot-water-usage.png)
+![Node-RED subflow: accumulated flow, a series of checks, a 15 s delay, then hot temperature and the energy calculation](img/node-red-hot-water-usage.png)
 
 *Hot water usage, inside. Accumulated flow arrives at the left, the volume delta is taken, only increases get past the switch, then the delay, then hot temperature is fetched and the debit worked out. A couple of node labels in my live flow are older than the ones in the attached JSON; the wiring is the same.*
 
-![Node-RED subflow: a 36 s timer and an input-energy branch feeding a queue function, then add water energy and set water energy](hot-water-heat-meter/node-red-energy-balance.png)
+![Node-RED subflow: a 36 s timer and an input-energy branch feeding a queue function, then add water energy and set water energy](img/node-red-energy-balance.png)
 
 *Energy balance, inside. The 36 s timer drives standby loss along the top; input energy comes in at the left and only positive deltas pass; the usage debit arrives on the subflow input. The function node is the queue that stops the three racing each other, and **add water energy** is the node holding the 0-clamp — the one Calibration asks you to edit.*
 
-![Node-RED parent flow: hot water usage into the balance subflow, into a sensor, through a change node, into a second sensor](hot-water-heat-meter/node-red-parent.png)
+![Node-RED parent flow: hot water usage into the balance subflow, into a sensor, through a change node, into a second sensor](img/node-red-parent.png)
 
 *The parent flow — the part you wire yourself. My nodes are named after the tank; in this article's terms they read Hot water usage → Energy balance → the energy deficit sensor, then a change node that turns deficit into a percentage and a second sensor for charge.*
 
@@ -246,7 +246,7 @@ The delay node is 15 s in the JSON I attached. Change it after you look at your 
 
 Only increases count, which is what makes restarts safe. If the meter or Node-RED restarts and accumulated flow goes back to zero, that arrives as a single negative step, it is dropped, and counting resumes from the new value. You lose at most the water drawn while it was away.
 
-![A one-minute temperature trace: the hot line climbs from 31 to 51 degrees over about fifteen seconds while the cold line falls from 20 to 16](hot-water-heat-meter/draw-lag.png)
+![A one-minute temperature trace: the hot line climbs from 31 to 51 degrees over about fifteen seconds while the cold line falls from 20 to 16](img/draw-lag.png)
 
 *One draw, one minute. The hot pipe starts at 31 °C — water that had been standing in it — and takes about fifteen seconds to reach the tank's real 51 °C. That is what the delay node waits out. The cold line falls over the same stretch as mains water arrives and pushes out the water that had warmed up in the inlet. Plot this on your own pipes and read your own number off it.*
 
@@ -306,7 +306,7 @@ A 300 L tank and a 60 K rise is about 21 kWh. I first used **24 kWh**, then **21
 
 An unused night is a start if you are in a hurry, but it is not enough. Leave the tank unused for **a few days** and let it do several **loss–reheat cycles** with no draws. Near full, energy deficit should drop at about \(P_\text{loss}\) watts. When the heater is on, it should climb towards 0.
 
-![Two stacked graphs over the same fortnight: charge declining smoothly then climbing sharply, and cumulative input energy rising in steps](hot-water-heat-meter/idle-days.png)
+![Two stacked graphs over the same fortnight: charge declining smoothly then climbing sharply, and cumulative input energy rising in steps](img/idle-days.png)
 
 *Two weeks with the house mostly unused. Above is charge: the long smooth declines are standby heat loss with no draws at all, and every sharp rise is the heater. Below is input energy over the same fortnight — each step up lines up with a climb above. This is the shape to tune `lossPower` against, and it is why one unused night is not enough: you want several of these cycles in a row.*
 
@@ -316,7 +316,7 @@ After a known draw, does charge drop in line with the hot water you actually use
 
 **Leave the 0-clamp off** until this is done so you can see overshoot. If the account runs away during that period, reset it to 0 by hand once — inject into a change node that sets `waterEnergy`, as above. Then turn the clamp on.
 
-![Two weeks of energy deficit in kWh during commissioning, sawtoothing between about -19 and +2, crossing above zero at each fill](hot-water-heat-meter/clamp-off-surplus.png)
+![Two weeks of energy deficit in kWh during commissioning, sawtoothing between about -19 and +2, crossing above zero at each fill](img/clamp-off-surplus.png)
 
 *Commissioning, with the clamp off, so the account was free to run above 0. The peaks poking above the line are the surplus you are looking for: the balance is biased slightly positive, which is exactly what you want, because once the clamp is on every real fill pins it back to 0.*
 
@@ -326,7 +326,7 @@ Over days the account should tend to creep above 0, so that real fills pin it at
 
 Heating stopping does **not** mean energy deficit is 0 this cycle. That is heat distribution. The clamp may not hit 0 every heat-up. That is normal.
 
-![Charge climbing in small steps from 97.4 % to exactly 100 %, holding flat there for a quarter of an hour, then sagging slowly](hot-water-heat-meter/clamp-pins-at-full.png)
+![Charge climbing in small steps from 97.4 % to exactly 100 %, holding flat there for a quarter of an hour, then sagging slowly](img/clamp-pins-at-full.png)
 
 *A real fill with the clamp on. Charge climbs in steps while the heater runs, flattens dead on 100 % — that flat top is the clamp holding the account at full — and then starts its slow sag as standby loss takes over again.*
 
@@ -346,7 +346,7 @@ The YAML in this article is for the Ethernet board (ESP32-PoE). The same sensors
 
 **Shower counter (application, not required).** Hot water usage is already an energy debit. Accumulating `−payload` into a counter made draws visible. That got my kids to use a lot less water. Add that node on the output of Hot water usage if you want it; it is not part of the heat meter.
 
-That is the box at the top of this article: a D1 mini, one eight-digit MAX7219 display and a push button in a wooden case, reading two Home Assistant sensors. The left half is charge, the right half is the counter, and the green button resets the counter — one press before you get in the shower. [`charge-display.yaml`](hot-water-heat-meter/charge-display.yaml) is that config. The button only reports the press; an automation in Home Assistant does the zeroing.
+That is the box at the top of this article: a D1 mini, one eight-digit MAX7219 display and a push button in a wooden case, reading two Home Assistant sensors. The left half is charge, the right half is the counter, and the green button resets the counter — one press before you get in the shower. [`charge-display.yaml`](config/charge-display.yaml) is that config. The button only reports the press; an automation in Home Assistant does the zeroing.
 
 ---
 
@@ -354,10 +354,10 @@ That is the box at the top of this article: a D1 mini, one eight-digit MAX7219 d
 
 | File | What |
 |------|------|
-| [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml) | ESPHome, ESP32-PoE |
-| [`hot-water-usage.json`](hot-water-heat-meter/hot-water-usage.json) | Node-RED subflow |
-| [`energy-balance.json`](hot-water-heat-meter/energy-balance.json) | Node-RED subflow |
-| [`charge-display.yaml`](hot-water-heat-meter/charge-display.yaml) | ESPHome, optional counter display (not part of the heat meter) |
+| [`water-heater.yaml`](config/water-heater.yaml) | ESPHome, ESP32-PoE |
+| [`hot-water-usage.json`](config/hot-water-usage.json) | Node-RED subflow |
+| [`energy-balance.json`](config/energy-balance.json) | Node-RED subflow |
+| [`charge-display.yaml`](config/charge-display.yaml) | ESPHome, optional counter display (not part of the heat meter) |
 
 ---
 

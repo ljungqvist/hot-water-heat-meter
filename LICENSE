@@ -1,14 +1,12 @@
 This repository is licensed in two parts.
 
-The article text and images — `README.md` and
-`hot-water-heat-meter/energy-balance-cartoon.png` — are licensed under the
-Creative Commons Attribution 4.0 International licence (CC BY 4.0).
+The article text and images — `README.md` and everything in `img/` — are
+licensed under the Creative Commons Attribution 4.0 International licence
+(CC BY 4.0).
 Full text: https://creativecommons.org/licenses/by/4.0/legalcode
 
-The configuration and code — `hot-water-heat-meter/water-heater.yaml`,
-`hot-water-heat-meter/hot-water-usage.json` and
-`hot-water-heat-meter/energy-balance.json` — are licensed under the MIT
-licence, reproduced below.
+The configuration and code — everything in `config/` — is licensed under the
+MIT licence, reproduced below.
 
 ---
 
