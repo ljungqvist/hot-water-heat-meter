@@ -58,7 +58,7 @@ I had an electrician do the mains and a plumber do the tank connections.
 
 ![The UFM-01, a small black oval module, fitted inline in a copper pipe between two brass compression fittings, with a brass mixing valve above it](hot-water-heat-meter/ufm-on-cold-inlet.jpg)
 
-*The UFM-01 — the black oval — inline on the cold inlet between two compression fittings. The mixer is the brass and black assembly at the top left, so the meter sits upstream of it on the common cold supply. This photo and the board below are from different tanks; the recipe is the same on both.*
+*The UFM-01 — the black oval — inline on the cold inlet between two compression fittings. The mixer is the brass and black assembly at the top left, so the meter sits upstream of it on the common cold supply.*
 
 ![A DS18B20 sensor held against a copper pipe by a stainless hose clamp, just below a brass mixing valve](hot-water-heat-meter/dallas-on-hot-pipe.jpg)
 
@@ -67,14 +67,6 @@ I had an electrician do the mains and a plumber do the tank connections.
 ![A small blue perfboard carrying three resistors, wired to an Olimex ESP32-PoE board lying beside it on graph paper](hot-water-heat-meter/divider-and-pullup.jpg)
 
 *Where the passives live: the UART divider and the Dallas pull-up on a scrap of perfboard, wired out beside the ESP32-PoE, before any of it went into an enclosure. The silkscreen reads plain `ESP32-PoE` — the ISO variant is pin-identical if that is what you have.*
-
-![An Olimex ESP32-PoE board wired up inside a white weatherproof enclosure, with an Ethernet socket and a grey RJ11 socket](hot-water-heat-meter/esp32-in-enclosure.jpg)
-
-*The ESP32-PoE in its box on the other tank, Ethernet in at the left. The grey socket on the right is an RJ11 that carries the Dallas out to the pipe. The red and green wash is the room lighting, not the board.*
-
-![Three Shelly Pro 2PM units side by side on a DIN rail, each with power, Wi-Fi and LAN indicator LEDs lit](hot-water-heat-meter/input-energy-shellies.jpg)
-
-*How I made input energy: three Shelly Pro 2PMs, one per heating element, summed into a single increasing kWh sensor. That is an installation detail rather than part of the recipe — any increasing energy sensor will do, and the model does not care how you build it.*
 
 ### Plumbing
 
