@@ -8,6 +8,14 @@ The recipe below is one working installation: an ESP32, a water flow meter, a te
 
 This YAML uses ESPHome’s stock [`ufm01`](https://esphome.io/components/ufm01/) component.
 
+![A small wooden box with two red seven-segment displays reading 86.7 and 0.89, and a green button on top](hot-water-heat-meter/charge-display.jpg)
+
+*86.7 % of a tank left. The box is the easy part — this article is about where that number comes from. The second display and the green button are a bonus; they come back at the end.*
+
+![Two days of how full the tank was: up from 45 % to nearly 100 %, down in steps, and up again](hot-water-heat-meter/charge-two-days.png)
+
+*The same number over two days. The steps down are showers, morning and evening. The stepped climb through the first night is the heater on the cheap night tariff; the long smooth climbs after midday are solar. The gentle sag through the second night, with no heating at all, is standby heat loss.*
+
 ---
 
 ## The idea
@@ -20,13 +28,17 @@ The model keeps one running account from three terms:
 - **Hot water usage** — thermal energy carried out in the drawn water, relative to the cold water that replaced it: \(E = m\,c\,\Delta T\).
 - **Standby heat loss** — energy the tank loses to the room, modelled as a power that scales with how full it is.
 
-The running total is **energy deficit**: how far the water heater is below a defined full, in kWh. `0` is that full; more negative means more heat has left than has been put back. It is clamped so it cannot go above `0`. **Charge** is that account as a percentage of **estimated full energy**.
+The running total is **energy deficit**: how far the water heater is below a defined full, in kWh. `0` is that full; more negative means more heat has left than has been put back. It is clamped so it cannot go above `0`.
+
+Counting down from full rather than up from empty is the point. Full announces itself: the heating stops, the tank really is full, and the account can be pushed back to `0` and held there. Empty announces nothing. It is hard to even define, and in a house that keeps washing it is a state you would almost never reach. So the account is anchored at the end that tells you when you have arrived, and the clamp at `0` does the correcting.
+
+**Charge** is that account as a percentage of **estimated full energy**.
 
 \[
 \text{charge} = 100\% + 100 \times \frac{\text{energy deficit}}{\text{estimated full energy}}
 \]
 
-If estimated full energy is 21 kWh, then 0.21 kWh is one percent, so charge is `100 + deficit / 0.21`. Heat in the tank is layered (stratification); I will call that **heat distribution**. Charge can go below 0 % while the tap is still hot. That is expected: estimated full energy is chosen on the safe side, and heat distribution means the last useful water is not a sharp empty.
+If estimated full energy is 21 kWh, then 0.21 kWh is one percent, so charge is `100 + deficit / 0.21`. The kWh account is the measured half of that; the percentage is guesswork laid on top, because estimated full energy is a guess. Heat in the tank is layered (stratification); I will call that **heat distribution**. Charge can go below 0 % while the tap is still hot. That is expected: estimated full energy is chosen on the safe side, and heat distribution means the last useful water is not a sharp empty.
 
 ---
 
@@ -178,6 +190,8 @@ These are the Home Assistant entities the subflows need:
 
 `flow_direction_wrong` and `empty_tube` are worth a glance the first week.
 
+If flow ever goes unavailable while `empty_tube` is *not* set, the meter has stopped talking rather than run dry. It has not been a problem for me, but it is easy to automate if it bothers you: watch for flow being unavailable for a minute or so, then power-cycle the meter — cut its 5 V if it is on a switched supply, or restart the ESP if, like the PoE board, there is nothing to switch. While the meter is quiet nothing is debited, so charge will read a little high until it comes back.
+
 ---
 
 ## The model in Node-RED
@@ -327,11 +341,17 @@ Heating stopping does **not** mean energy deficit is 0 this cycle. That is heat 
 
 I had a working prototype in November 2024 and both production tanks from the end of January 2025. That is about eighteen months on two tanks as of writing.
 
-The YAML in this article is for the Ethernet board (ESP32-POE-ISO). The same sensors ran on a D1 mini first, and I also run one tank on an ESP32-C6 (Thread). The UART divider and Dallas pull-up stay; GPIOs change.
+**How accurate is it?** I have never put a number on it, and I am not sure one would mean much — it depends almost entirely on how carefully you calibrated. What I can say is this. In summer, sunny but never quite sunny enough, the tank can go weeks without once reaching full: weeks with no chance for the clamp to correct anything. When it finally does fill, the account is overshooting by only a little. That is the test I trust.
 
 I do not correct the account by hand in normal operation. I did that while commissioning and when something was broken. In operation the 0-clamp *is* the calibration, because the balance is a little on the positive side.
 
+**The bottom of the scale depends on how you got there.** That is the tank, not the meter. Come down from full in one go — a bath, or showers back to back — and there is little mixing, especially in a vertical tank: the top stays hot, and you will still be drawing hot water well below 0 %. Drift down slowly instead, with no heating for a long time, and the whole tank cools together; you can be sitting at 20 % with water that is already disappointing. Same number, different water. Nothing here can fix that, and it is worth knowing before you lean on the bottom of the scale.
+
+The YAML in this article is for the Ethernet board (ESP32-POE-ISO). The same sensors ran on a D1 mini first, and I also run one tank on an ESP32-C6 (Thread). The UART divider and Dallas pull-up stay; GPIOs change.
+
 **Shower counter (application, not required).** Hot water usage is already an energy debit. Accumulating `−payload` into a counter made draws visible. That got my kids to use a lot less water. Add that node on the output of Hot water usage if you want it; it is not part of the heat meter.
+
+That is the box at the top of this article: a D1 mini, one eight-digit MAX7219 display and a push button in a wooden case, reading two Home Assistant sensors. The left half is charge, the right half is the counter, and the green button resets the counter — one press before you get in the shower. [`charge-display.yaml`](hot-water-heat-meter/charge-display.yaml) is that config. The button only reports the press; an automation in Home Assistant does the zeroing.
 
 ---
 
@@ -342,3 +362,8 @@ I do not correct the account by hand in normal operation. I did that while commi
 | [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml) | ESPHome, ESP32-POE-ISO |
 | [`hot-water-usage.json`](hot-water-heat-meter/hot-water-usage.json) | Node-RED subflow |
 | [`energy-balance.json`](hot-water-heat-meter/energy-balance.json) | Node-RED subflow |
+| [`charge-display.yaml`](hot-water-heat-meter/charge-display.yaml) | ESPHome, optional counter display (not part of the heat meter) |
+
+---
+
+*A note on names, since everyone uses a different one. I call mine a boiler. Elsewhere the same object is a hot water cylinder, a hot water tank, a hot water heater, a calorifier, a DHW tank, or just the immersion. I have used **water heater** throughout so that one word means one thing.*

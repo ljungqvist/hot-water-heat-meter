@@ -1,0 +1,53 @@
+# Optional: the little box that shows charge and a resettable hot-water counter.
+# Not part of the heat meter. D1 mini, one 8-digit MAX7219 module, one push button.
+
+esphome:
+  name: charge-display
+  friendly_name: Charge display
+
+esp8266:
+  board: d1_mini
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+    password: ""
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# The two Home Assistant sensors the heat meter produces.
+sensor:
+  - platform: homeassistant
+    id: charge
+    entity_id: sensor.water_heater_charge
+  - platform: homeassistant
+    id: hot_water_used
+    entity_id: sensor.water_heater_hot_water_used
+
+# Button on top of the box. It only reports the press; an automation in
+# Home Assistant zeroes the counter.
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: D0
+      mode:
+        input: true
+        pulldown: true
+    name: Hot water counter reset
+
+spi:
+  clk_pin: D5
+  mosi_pin: D7
+
+display:
+  - platform: max7219
+    cs_pin: D8
+    intensity: 1
+    num_chips: 1
+    lambda: |-
+      it.printf("%5.1f%5.2f", id(charge).state, id(hot_water_used).state);
