@@ -60,7 +60,9 @@ I had an electrician do the mains and a plumber do the tank connections.
 
 *The UFM-01 — the black oval — inline on the cold inlet between two compression fittings. The mixer is the brass and black assembly at the top left, so the meter sits upstream of it on the common cold supply. This photo and the board below are from different tanks; the recipe is the same on both.*
 
-*[Photo: DS18B20 on the usage-side hot pipe, close to the tank.]*
+![A DS18B20 sensor held against a copper pipe by a stainless hose clamp, just below a brass mixing valve](hot-water-heat-meter/dallas-on-hot-pipe.jpg)
+
+*The DS18B20 clamped against the hot pipe just below the mixer. A sensor inside the pipe would read faster and truer; this is what I have.*
 
 ![A small blue perfboard carrying three resistors, wired to an Olimex ESP32-PoE board lying beside it on graph paper](hot-water-heat-meter/divider-and-pullup.jpg)
 
@@ -70,11 +72,11 @@ I had an electrician do the mains and a plumber do the tank connections.
 
 *The ESP32-PoE in its box on the other tank, Ethernet in at the left. The grey socket on the right is an RJ11 that carries the Dallas out to the pipe. The red and green wash is the room lighting, not the board.*
 
-*[Photo, optional: the three Shellies — this is how I made input energy, not a wiring tutorial.]*
+![Three Shelly Pro 2PM units side by side on a DIN rail, each with power, Wi-Fi and LAN indicator LEDs lit](hot-water-heat-meter/input-energy-shellies.jpg)
+
+*How I made input energy: three Shelly Pro 2PMs, one per heating element, summed into a single increasing kWh sensor. That is an installation detail rather than part of the recipe — any increasing energy sensor will do, and the model does not care how you build it.*
 
 ### Plumbing
-
-*[Figure: plumbing schematic — same as the sketch below, from a photo.]*
 
 **Treat the water heater and the mixer under it as one appliance.** Cold water goes in at one end, hot water comes out at the other, and everything in between — the tank, the mixer, the pipes joining them — is inside that appliance. Measure where the water crosses the outer edge: flow and cold temperature on the pipe going in, hot temperature on the pipe coming out. A sensor placed inside only sees part of the water.
 
@@ -232,11 +234,17 @@ The JSON files are the two subflows only. You still wire them on the flow:
 4. Add a change node: `100 + 100 * payload / estimatedFullEnergy`.
 5. Add an `ha-sensor`: `sensor.water_heater_charge` (%).
 
-*[Figure: Node-RED screenshot of Hot water usage.]*
+![Node-RED subflow: accumulated flow, a series of checks, a 15 s delay, then hot temperature and the energy calculation](hot-water-heat-meter/node-red-hot-water-usage.png)
 
-*[Figure: Node-RED screenshot of Energy balance.]*
+*Hot water usage, inside. Accumulated flow arrives at the left, the volume delta is taken, only increases get past the switch, then the delay, then hot temperature is fetched and the debit worked out. A couple of node labels in my live flow are older than the ones in the attached JSON; the wiring is the same.*
 
-*[Figure: Node-RED screenshot of the parent wiring: usage → balance → deficit → charge.]*
+![Node-RED subflow: a 36 s timer and an input-energy branch feeding a queue function, then add water energy and set water energy](hot-water-heat-meter/node-red-energy-balance.png)
+
+*Energy balance, inside. The 36 s timer drives standby loss along the top; input energy comes in at the left and only positive deltas pass; the usage debit arrives on the subflow input. The function node is the queue that stops the three racing each other, and **add water energy** is the node holding the 0-clamp — the one Calibration asks you to edit.*
+
+![Node-RED parent flow: hot water usage into the balance subflow, into a sensor, through a change node, into a second sensor](hot-water-heat-meter/node-red-parent.png)
+
+*The parent flow — the part you wire yourself. My nodes are named after the tank; in this article's terms they read Hot water usage → Energy balance → the energy deficit sensor, then a change node that turns deficit into a percentage and a second sensor for charge.*
 
 ```text
 Hot water usage  ──►  Energy balance  ──►  energy deficit  ──►  charge %
@@ -283,7 +291,9 @@ The delay node is 15 s in the JSON I attached. Change it after you look at your 
 
 Only increases count, which is what makes restarts safe. If the meter or Node-RED restarts and accumulated flow goes back to zero, that arrives as a single negative step, it is dropped, and counting resumes from the new value. You lose at most the water drawn while it was away.
 
-*[Graph: one draw — flow, hot temperature, cold temperature. Annotate the lag (~15 s here).]*
+![A one-minute temperature trace: the hot line climbs from 31 to 51 degrees over about fifteen seconds while the cold line falls from 20 to 16](hot-water-heat-meter/draw-lag.png)
+
+*One draw, one minute. The hot pipe starts at 31 °C — water that had been standing in it — and takes about fifteen seconds to reach the tank's real 51 °C. That is what the delay node waits out. The cold line falls over the same stretch as mains water arrives and pushes out the water that had warmed up in the inlet. Plot this on your own pipes and read your own number off it.*
 
 ### Energy balance
 
@@ -341,7 +351,9 @@ A 300 L tank and a 60 K rise is about 21 kWh. I first used **24 kWh**, then **21
 
 An unused night is a start if you are in a hurry, but it is not enough. Leave the tank unused for **a few days** and let it do several **loss–reheat cycles** with no draws. Near full, energy deficit should drop at about \(P_\text{loss}\) watts. When the heater is on, it should climb towards 0.
 
-*[Graph: idle days — charge / energy deficit, no draws, several cool-off then heat-up cycles.]*
+![Two stacked graphs over the same fortnight: charge declining smoothly then climbing sharply, and cumulative input energy rising in steps](hot-water-heat-meter/idle-days.png)
+
+*Two weeks with the house mostly unused. Above is charge: the long smooth declines are standby heat loss with no draws at all, and every sharp rise is the heater. Below is input energy over the same fortnight — each step up lines up with a climb above. This is the shape to tune `lossPower` against, and it is why one unused night is not enough: you want several of these cycles in a row.*
 
 ### 3. Usage correction
 
@@ -349,7 +361,9 @@ After a known draw, does charge drop in line with the hot water you actually use
 
 **Leave the 0-clamp off** until this is done so you can see overshoot. If the account runs away during that period, reset it to 0 by hand once — inject into a change node that sets `waterEnergy`, as above. Then turn the clamp on.
 
-*[Graph: clamp off — energy deficit allowed above 0, slight surplus visible.]*
+![Two weeks of energy deficit in kWh during commissioning, sawtoothing between about -19 and +2, crossing above zero at each fill](hot-water-heat-meter/clamp-off-surplus.png)
+
+*Commissioning, with the clamp off, so the account was free to run above 0. The peaks poking above the line are the surplus you are looking for: the balance is biased slightly positive, which is exactly what you want, because once the clamp is on every real fill pins it back to 0.*
 
 ### 4. Long-run test
 
@@ -357,11 +371,9 @@ Over days the account should tend to creep above 0, so that real fills pin it at
 
 Heating stopping does **not** mean energy deficit is 0 this cycle. That is heat distribution. The clamp may not hit 0 every heat-up. That is normal.
 
-*[Graph: clamp on, a real fill — deficit pins at 0; heating may have stopped earlier.]*
+![Charge climbing in small steps from 97.4 % to exactly 100 %, holding flat there for a quarter of an hour, then sagging slowly](hot-water-heat-meter/clamp-pins-at-full.png)
 
-*[Graph: charge below 0 % with the hot pipe still hot.]*
-
-*[Graph: a normal day — charge. Steps down = draws; climb towards 0 = heating; slow sag = loss.]*
+*A real fill with the clamp on. Charge climbs in steps while the heater runs, flattens dead on 100 % — that flat top is the clamp holding the account at full — and then starts its slow sag as standby loss takes over again.*
 
 ---
 
