@@ -23,7 +23,7 @@ The model keeps one running account from three terms:
 ![Energy balance: input energy heats the water heater from below, hot water usage leaves the top, standby heat loss goes out through the walls](img/energy-balance-cartoon.png)
 
 - **Input energy** — electrical energy into the water heater. One `total_increasing` sensor in kWh. I built that from three Shelly Pro 2PMs (one per heating element / phase). The model does not care how you build that sensor.
-- **Hot water usage** — thermal energy carried out in the drawn water, relative to the cold water that replaced it: \(E = m\,c\,\Delta T\).
+- **Hot water usage** — thermal energy carried out in the drawn water, relative to the cold water that replaced it: $E = m\\,c\\,\Delta T$.
 - **Standby heat loss** — energy the tank loses to the room, modelled as a power that scales with how full it is.
 
 The running total is **energy deficit**: how far the water heater is below a defined full, in kWh. `0` is that full; more negative means more heat has left than has been put back. It is clamped so it cannot go above `0`.
@@ -32,9 +32,9 @@ Counting down from full rather than up from empty is the point. Full announces i
 
 **Charge** is that account as a percentage of **estimated full energy**.
 
-\[
-\text{charge} = 100\% + 100 \times \frac{\text{energy deficit}}{\text{estimated full energy}}
-\]
+$$
+\text{charge} = 100\\% + 100 \times \frac{\text{energy deficit}}{\text{estimated full energy}}
+$$
 
 If estimated full energy is 21 kWh, then 0.21 kWh is one percent, so charge is `100 + deficit / 0.21`. The kWh account is the measured half of that; the percentage is guesswork laid on top, because estimated full energy is a guess. Heat in the tank is layered (stratification); I will call that **heat distribution**. Charge can go below 0 % while the tap is still hot. That is expected: estimated full energy is chosen on the safe side, and heat distribution means the last useful water is not a sharp empty.
 
@@ -81,11 +81,11 @@ cold supply ──UFM──┬────┤   tank   ├──hot───┐
                                        └─────────┘
 ```
 
-The rule is that **the UFM must see every litre that later passes the Dallas**. Get that right and the mixer stops mattering: blending does not destroy energy, it trades a smaller volume of hotter water for a larger volume of cooler water, and \(V \cdot \Delta T\) comes out the same. Measuring on the house side of the mixer still measures what left the tank.
+The rule is that **the UFM must see every litre that later passes the Dallas**. Get that right and the mixer stops mattering: blending does not destroy energy, it trades a smaller volume of hotter water for a larger volume of cooler water, and $V \cdot \Delta T$ comes out the same. Measuring on the house side of the mixer still measures what left the tank.
 
 So put the UFM **upstream of the tee that feeds the mixer's cold port**, on the common cold supply, as in the sketch. Every litre through it is then a litre out of the taps. Put it downstream instead, on the branch that only feeds the tank, and the cold going straight to the mixer bypasses it — you are metering tank throughput, and the account under-debits by however much cold the mixer blends in. That is not a rare case; blending is what the mixer is for.
 
-- The UFM measures flow *and* temperature. Here that temperature is \(T_\text{cold}\). The module is rated to 60 °C. Both pipes may stay under that, and the volume change from heat is small, so the hot pipe would work. I still put it on the cold side. You can swap: UFM on the hot pipe (\(T_\text{hot}\)) and the Dallas on the cold pipe (\(T_\text{cold}\)).
+- The UFM measures flow *and* temperature. Here that temperature is $T_\text{cold}$. The module is rated to 60 °C. Both pipes may stay under that, and the volume change from heat is small, so the hot pipe would work. I still put it on the cold side. You can swap: UFM on the hot pipe ($T_\text{hot}$) and the Dallas on the cold pipe ($T_\text{cold}$).
 - A sensor *inside* the pipe would be better than a pipe-surface DS18B20. I tried wrapping the sensor; I am not sure it helps.
 - Mount the UFM with the flow arrow pointing in the direction of the water.
 
@@ -217,12 +217,12 @@ On each increase of accumulated flow (litres ≈ kg):
 3. Read hot temperature (current) and cold temperature (already captured at the flow event).
 4. Emit a **debit** (negative energy):
 
-\[
-\Delta E = -\,k \cdot V \cdot 4184 \cdot (T_\text{hot} - T_\text{cold}) / 3.6\times 10^{6}
-\quad\text{[energy in kWh if \(V\) in litres]}
-\]
+$$
+\Delta E = -\\,k \cdot V \cdot 4184 \cdot (T_\text{hot} - T_\text{cold}) / 3.6\times 10^{6}
+\quad\text{[energy in kWh if } V \text{ in litres]}
+$$
 
-\(4184\,\mathrm{J/(kg\cdot K)}\) is \(c\) for water. \(k\) is **usage correction** (start at `1.0`, then see Calibration).
+$4184\\,\mathrm{J/(kg\cdot K)}$ is $c$ for water. $k$ is **usage correction** (start at `1.0`, then see Calibration).
 
 JSONata in the subflow (payload = litres this draw):
 
@@ -258,12 +258,12 @@ Three credits and debits go into one flow variable. In the JSON that variable is
 
 **Standby heat loss.** Every 36 s. `lossPower` is in **W**, same as the env var:
 
-\[
+$$
 \Delta E_\text{loss} = -\frac{E_\text{full} + E_\text{deficit}}{E_\text{full}} \cdot \frac{P_\text{loss}}{1000} \cdot \frac{36}{3600}
 \quad\text{[kWh]}
-\]
+$$
 
-At full (\(E_\text{deficit} = 0\)) the tank loses at \(P_\text{loss}\) watts. At “empty” (\(E_\text{deficit} = -E_\text{full}\)) the loss is 0. Loss scales with charge.
+At full ($E_\text{deficit} = 0$) the tank loses at $P_\text{loss}$ watts. At “empty” ($E_\text{deficit} = -E_\text{full}$) the loss is 0. Loss scales with charge.
 
 **Clamp (after calibration).** The new deficit is `min(0, previous + delta)`. It cannot go above 0 (full). A slight surplus over many days is deliberate, so the account would creep above 0. When the tank actually fills, the clamp pins it at 0. That pin is the calibration.
 
@@ -296,15 +296,15 @@ Four knobs. They all change the same account. Tune in this order.
 
 Naive whole-tank figure:
 
-\[
+$$
 E_\text{full,naive} = V_\text{tank}\cdot c\cdot\Delta T / 3.6\times 10^{6}
-\]
+$$
 
 A 300 L tank and a 60 K rise is about 21 kWh. I first used **24 kWh**, then **21 kWh** and **20 kWh** to be on the safe side. Lower means charge hits 0 % while there is still usable hot water. I have **vertical** tanks; a **horizontal** one needs a lower estimated full energy, because heat distribution is different.
 
 ### 2. Standby heat loss
 
-An unused night is a start if you are in a hurry, but it is not enough. Leave the tank unused for **a few days** and let it do several **loss–reheat cycles** with no draws. Near full, energy deficit should drop at about \(P_\text{loss}\) watts. When the heater is on, it should climb towards 0.
+An unused night is a start if you are in a hurry, but it is not enough. Leave the tank unused for **a few days** and let it do several **loss–reheat cycles** with no draws. Near full, energy deficit should drop at about $P_\text{loss}$ watts. When the heater is on, it should climb towards 0.
 
 ![Two stacked graphs over the same fortnight: charge declining smoothly then climbing sharply, and cumulative input energy rising in steps](img/idle-days.png)
 
@@ -312,7 +312,7 @@ An unused night is a start if you are in a hurry, but it is not enough. Leave th
 
 ### 3. Usage correction
 
-After a known draw, does charge drop in line with the hot water you actually used? Start \(k = 1\), then raise it if the formula is under-debiting. I started too high (**1.2**) and walked down to about **1.05–1.10**.
+After a known draw, does charge drop in line with the hot water you actually used? Start $k = 1$, then raise it if the formula is under-debiting. I started too high (**1.2**) and walked down to about **1.05–1.10**.
 
 **Leave the 0-clamp off** until this is done so you can see overshoot. If the account runs away during that period, reset it to 0 by hand once — inject into a change node that sets `waterEnergy`, as above. Then turn the clamp on.
 
@@ -322,7 +322,7 @@ After a known draw, does charge drop in line with the hot water you actually use
 
 ### 4. Long-run test
 
-Over days the account should tend to creep above 0, so that real fills pin it at 0. If it never reaches 0, you are debiting too much (loss or \(k\) too high). If it sits on 0 while the top of the tank is still cold, you are crediting too much.
+Over days the account should tend to creep above 0, so that real fills pin it at 0. If it never reaches 0, you are debiting too much (loss or $k$ too high). If it sits on 0 while the top of the tank is still cold, you are crediting too much.
 
 Heating stopping does **not** mean energy deficit is 0 this cycle. That is heat distribution. The clamp may not hit 0 every heat-up. That is normal.
 
