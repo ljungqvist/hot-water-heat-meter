@@ -6,8 +6,6 @@ This build estimates both with a heat meter on the pipes and an energy balance o
 
 The recipe below is one working installation: an ESP32, a water flow meter, a temperature sensor, an input energy sensor, and two Node-RED subflows. I run this on two tanks; the YAML uses generic names.
 
-This YAML uses ESPHome’s stock [`ufm01`](https://esphome.io/components/ufm01/) component.
-
 ![A small wooden box with two red seven-segment displays reading 86.7 and 0.89, and a green button on top](hot-water-heat-meter/charge-display.jpg)
 
 *86.7 % of a tank left. The box is the easy part — this article is about where that number comes from. The second display and the green button are a bonus; they come back at the end.*
@@ -50,7 +48,7 @@ I had an electrician do the mains and a plumber do the tank connections.
 
 | Part | Role |
 |------|------|
-| Olimex ESP32-POE-ISO | ESPHome, Ethernet |
+| Olimex ESP32-PoE | ESPHome, Ethernet |
 | ScioSense UFM-01 | Accumulated flow (L) + **cold temperature** |
 | DS18B20 | **Hot temperature** (pipe surface) |
 | 10 µF on UFM 5 V–GND | Supply bypass |
@@ -58,11 +56,19 @@ I had an electrician do the mains and a plumber do the tank connections.
 | 5.1 kΩ | Dallas pull-up to 3.3 V |
 | Energy sensor, increasing, in kWh | **Input energy** (I used three Shelly Pro 2PM) |
 
-*[Photo: UFM-01 on the cold inlet, flow arrow visible.]*
+![The UFM-01, a small black oval module, fitted inline in a copper pipe between two brass compression fittings, with a brass mixing valve above it](hot-water-heat-meter/ufm-on-cold-inlet.jpg)
 
-*[Photo: DS18B20 on the usage-side hot pipe, close to the tank; mixer under the tank in the same frame if it reads.]*
+*The UFM-01 — the black oval — inline on the cold inlet between two compression fittings. The mixer is the brass and black assembly at the top left, so the meter sits upstream of it on the common cold supply. This photo and the board below are from different tanks; the recipe is the same on both.*
 
-*[Photo: ESP32-POE-ISO, UART divider, Dallas pull-up.]*
+*[Photo: DS18B20 on the usage-side hot pipe, close to the tank.]*
+
+![A small blue perfboard carrying three resistors, wired to an Olimex ESP32-PoE board lying beside it on graph paper](hot-water-heat-meter/divider-and-pullup.jpg)
+
+*Where the passives live: the UART divider and the Dallas pull-up on a scrap of perfboard, wired out beside the ESP32-PoE, before any of it went into an enclosure. The silkscreen reads plain `ESP32-PoE` — the ISO variant is pin-identical if that is what you have.*
+
+![An Olimex ESP32-PoE board wired up inside a white weatherproof enclosure, with an Ethernet socket and a grey RJ11 socket](hot-water-heat-meter/esp32-in-enclosure.jpg)
+
+*The ESP32-PoE in its box on the other tank, Ethernet in at the left. The grey socket on the right is an RJ11 that carries the Dallas out to the pipe. The red and green wash is the room lighting, not the board.*
 
 *[Photo, optional: the three Shellies — this is how I made input energy, not a wiring tutorial.]*
 
@@ -70,13 +76,20 @@ I had an electrician do the mains and a plumber do the tank connections.
 
 *[Figure: plumbing schematic — same as the sketch below, from a photo.]*
 
+**Treat the water heater and the mixer under it as one appliance.** Cold water goes in at one end, hot water comes out at the other, and everything in between — the tank, the mixer, the pipes joining them — is inside that appliance. Measure where the water crosses the outer edge: flow and cold temperature on the pipe going in, hot temperature on the pipe coming out. A sensor placed inside only sees part of the water.
+
 ```text
-                 ┌──── mixer / thermostat under the tank ────┐
-cold supply ──UFM┤                                           ├Dallas── taps
-                 └──────────────── tank ─────────────────────┘
+                        ┌──────────┐
+cold supply ──UFM──┬────┤   tank   ├──hot───┐
+                   │    └──────────┘        │
+                   │                   ┌────┴────┐
+                   └───── cold ────────┤  mixer  ├──Dallas── taps
+                                       └─────────┘
 ```
 
-The UFM is on the **cold pipe into that mixer**, the Dallas on the **hot pipe out of it**, close to the tank. That is the water the energy balance is about — on the house side of the mixer. If the mixer adds extra cold water *after* the UFM, the volume at the UFM is not the volume past the Dallas. Put the UFM on the shared cold supply so the two match, or accept that you are only metering tank throughput.
+The rule is that **the UFM must see every litre that later passes the Dallas**. Get that right and the mixer stops mattering: blending does not destroy energy, it trades a smaller volume of hotter water for a larger volume of cooler water, and \(V \cdot \Delta T\) comes out the same. Measuring on the house side of the mixer still measures what left the tank.
+
+So put the UFM **upstream of the tee that feeds the mixer's cold port**, on the common cold supply, as in the sketch. Every litre through it is then a litre out of the taps. Put it downstream instead, on the branch that only feeds the tank, and the cold going straight to the mixer bypasses it — you are metering tank throughput, and the account under-debits by however much cold the mixer blends in. That is not a rare case; blending is what the mixer is for.
 
 - The UFM measures flow *and* temperature. Here that temperature is \(T_\text{cold}\). The module is rated to 60 °C. Both pipes may stay under that, and the volume change from heat is small, so the hot pipe would work. I still put it on the cold side. You can swap: UFM on the hot pipe (\(T_\text{hot}\)) and the Dallas on the cold pipe (\(T_\text{cold}\)).
 - A sensor *inside* the pipe would be better than a pipe-surface DS18B20. I tried wrapping the sensor; I am not sure it helps.
@@ -84,7 +97,7 @@ The UFM is on the **cold pipe into that mixer**, the Dallas on the **hot pipe ou
 
 Not every tank has a mixer under it. Then there is only a cold inlet and a hot outlet. Put the UFM on the cold inlet and the Dallas on the hot outlet, both close to the tank. Without a mixer, there is no before or after.
 
-### UART and Dallas (ESP32-POE-ISO)
+### UART and Dallas (ESP32-PoE)
 
 UFM-01 is 5 V, UART **2400 8E1**. The ESP32 is 3.3 V.
 
@@ -99,7 +112,9 @@ Same idea on any other board; only the GPIO numbers change.
 
 ## ESPHome
 
-Self-contained config (no packages). Pins are POE-ISO; names are generic. Same file: [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml). Set an OTA password and API encryption before the device is on the network.
+The [`ufm01`](https://esphome.io/components/ufm01/) component ships with ESPHome, so there is nothing external to add — but you want **2026.8.1 or newer**, which is what I run. Older releases are missing the startup reset retry that gets the meter talking again after a reboot.
+
+Self-contained config (no packages). Pins are for the ESP32-PoE, and the other boards in that family share the pinout, so the same `esp32-poe` board id covers them. Names are generic. Same file: [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml). Set an OTA password and API encryption before the device is on the network.
 
 ```yaml
 esphome:
@@ -107,7 +122,7 @@ esphome:
   friendly_name: Water heater
 
 esp32:
-  board: esp32-poe-iso
+  board: esp32-poe
   framework:
     type: arduino
 
@@ -152,7 +167,7 @@ one_wire:
 sensor:
   - platform: dallas_temp
     name: Hot temperature
-    update_interval: 1.9s
+    update_interval: 2s # a second or two; fast enough to follow a draw
     one_wire_id: bus1
 
   - platform: ufm01
@@ -197,6 +212,17 @@ If flow ever goes unavailable while `empty_tube` is *not* set, the meter has sto
 ## The model in Node-RED
 
 You need the Home Assistant WebSocket nodes (`node-red-contrib-home-assistant-websocket`). Import [`hot-water-usage.json`](hot-water-heat-meter/hot-water-usage.json) and [`energy-balance.json`](hot-water-heat-meter/energy-balance.json). After import, set the Home Assistant server on the HA nodes inside each subflow, then set the env vars below.
+
+Energy balance keeps the account in a context store named `store`, so that it survives a restart of Node-RED. Stock Node-RED has no such store — context is in memory only — so add one to `settings.js` before you import, and restart:
+
+```js
+contextStorage: {
+    store: { module: "localfilesystem" },
+    default: { module: "memory" },
+},
+```
+
+The name matters. Stock `settings.js` has a commented-out example, but uncommenting it gives you a *default* file store and still nothing called `store`, and the subflow will have nowhere to keep the account. The variable is called `waterEnergy`. Once the store exists, the context sidebar in the editor will show you its value. To *change* it, wire an inject node into a change node that sets that context property — you will want that once during calibration.
 
 The JSON files are the two subflows only. You still wire them on the flow:
 
@@ -255,6 +281,8 @@ $eInKWh := $eInJ / 1000 / 3600;
 
 The delay node is 15 s in the JSON I attached. Change it after you look at your graph.
 
+Only increases count, which is what makes restarts safe. If the meter or Node-RED restarts and accumulated flow goes back to zero, that arrives as a single negative step, it is dropped, and counting resumes from the new value. You lose at most the water drawn while it was away.
+
 *[Graph: one draw — flow, hot temperature, cold temperature. Annotate the lag (~15 s here).]*
 
 ### Energy balance
@@ -291,7 +319,7 @@ Charge (step 4 above), with `estimatedFullEnergy` = 21 kWh:
 ```
 
 - `sensor.water_heater_energy_deficit` — in kWh, state class measurement. It rarely sits at exactly 0. Do not add it to the Energy dashboard; input energy is already there.
-- `sensor.water_heater_charge` — %, device class battery is fine.
+- `sensor.water_heater_charge` — %, device class battery is fine. It can read negative, and a gauge card takes that in its stride: the needle sits at the bottom and the number still reads true.
 
 ---
 
@@ -319,7 +347,7 @@ An unused night is a start if you are in a hurry, but it is not enough. Leave th
 
 After a known draw, does charge drop in line with the hot water you actually used? Start \(k = 1\), then raise it if the formula is under-debiting. I started too high (**1.2**) and walked down to about **1.05–1.10**.
 
-**Leave the 0-clamp off** until this is done so you can see overshoot. If the account runs away during that period, reset it to 0 by hand once. Then turn the clamp on.
+**Leave the 0-clamp off** until this is done so you can see overshoot. If the account runs away during that period, reset it to 0 by hand once — inject into a change node that sets `waterEnergy`, as above. Then turn the clamp on.
 
 *[Graph: clamp off — energy deficit allowed above 0, slight surplus visible.]*
 
@@ -345,9 +373,9 @@ I had a working prototype in November 2024 and both production tanks from the en
 
 I do not correct the account by hand in normal operation. I did that while commissioning and when something was broken. In operation the 0-clamp *is* the calibration, because the balance is a little on the positive side.
 
-**The bottom of the scale depends on how you got there.** That is the tank, not the meter. Come down from full in one go — a bath, or showers back to back — and there is little mixing, especially in a vertical tank: the top stays hot, and you will still be drawing hot water well below 0 %. Drift down slowly instead, with no heating for a long time, and the whole tank cools together; you can be sitting at 20 % with water that is already disappointing. Same number, different water. Nothing here can fix that, and it is worth knowing before you lean on the bottom of the scale.
+**The bottom of the scale depends on how you got there.** That is the tank, not the meter. Come down from full in one go — a bath, or showers back to back — and there is little mixing, especially in a vertical tank: the top stays hot, and you will still be drawing hot water well below 0 %. Drift down slowly instead, with no heating for a long time, and the whole tank cools together; you can be sitting at 20 % with water that is already disappointing. Same number, different water. Nothing here can fix that, and it is worth knowing before you trust that last stretch. It has happened a handful of times here in eighteen months: rare, but not theoretical.
 
-The YAML in this article is for the Ethernet board (ESP32-POE-ISO). The same sensors ran on a D1 mini first, and I also run one tank on an ESP32-C6 (Thread). The UART divider and Dallas pull-up stay; GPIOs change.
+The YAML in this article is for the Ethernet board (ESP32-PoE). The same sensors ran on a D1 mini first, and I also run one tank on an ESP32-C6 (Thread). The UART divider and Dallas pull-up stay; GPIOs change.
 
 **Shower counter (application, not required).** Hot water usage is already an energy debit. Accumulating `−payload` into a counter made draws visible. That got my kids to use a lot less water. Add that node on the output of Hot water usage if you want it; it is not part of the heat meter.
 
@@ -359,7 +387,7 @@ That is the box at the top of this article: a D1 mini, one eight-digit MAX7219 d
 
 | File | What |
 |------|------|
-| [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml) | ESPHome, ESP32-POE-ISO |
+| [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml) | ESPHome, ESP32-PoE |
 | [`hot-water-usage.json`](hot-water-heat-meter/hot-water-usage.json) | Node-RED subflow |
 | [`energy-balance.json`](hot-water-heat-meter/energy-balance.json) | Node-RED subflow |
 | [`charge-display.yaml`](hot-water-heat-meter/charge-display.yaml) | ESPHome, optional counter display (not part of the heat meter) |

@@ -3,7 +3,7 @@ esphome:
   friendly_name: Water heater
 
 esp32:
-  board: esp32-poe-iso
+  board: esp32-poe
   framework:
     type: arduino
 
@@ -48,7 +48,7 @@ one_wire:
 sensor:
   - platform: dallas_temp
     name: Hot temperature
-    update_interval: 1.9s
+    update_interval: 2s # a second or two; fast enough to follow a draw
     one_wire_id: bus1
 
   - platform: ufm01
