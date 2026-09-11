@@ -108,34 +108,11 @@ Same idea on any other board; only the GPIO numbers change.
 
 The [`ufm01`](https://esphome.io/components/ufm01/) component ships with ESPHome, so there is nothing external to add — but you want **2026.8.1 or newer**, which is what I run. Older releases are missing the startup reset retry that gets the meter talking again after a reboot.
 
-Self-contained config (no packages). Pins are for the ESP32-PoE, and the other boards in that family share the pinout, so the same `esp32-poe` board id covers them. Names are generic. Same file: [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml). Set an OTA password and API encryption before the device is on the network.
+The whole config is [`water-heater.yaml`](hot-water-heat-meter/water-heater.yaml) — self-contained, no packages, generic names. Pins are for the ESP32-PoE, and the other boards in that family share the pinout, so the same `esp32-poe` board id covers them. Set an OTA password and API encryption before the device is on the network.
+
+Most of that file is boilerplate: board, Ethernet, `logger`, `api`, `ota`. This is the part that carries the design.
 
 ```yaml
-esphome:
-  name: water-heater
-  friendly_name: Water heater
-
-esp32:
-  board: esp32-poe
-  framework:
-    type: arduino
-
-ethernet:
-  type: LAN8720
-  mdc_pin: GPIO23
-  mdio_pin: GPIO18
-  clk_mode: GPIO17_OUT
-  phy_addr: 0
-  power_pin: GPIO12
-
-logger:
-
-api:
-
-ota:
-  - platform: esphome
-    password: ""
-
 # UFM-01: 5 V + GND, 10 µF across 5 V–GND.
 # ESP32 TX (GPIO32) → UFM RX.
 # UFM TX → 1 kΩ → ESP32 RX (GPIO35) → 2 kΩ → GND (divider).
@@ -172,23 +149,9 @@ sensor:
       name: Flow
     temperature:
       name: Cold temperature
-
-binary_sensor:
-  - platform: ufm01
-    ufm01_id: ufm01_component
-    ufc_chip_error:
-      name: UFC chip error
-      entity_category: diagnostic
-    flow_direction_wrong:
-      name: Flow direction wrong
-      entity_category: diagnostic
-    empty_tube:
-      name: Empty tube
-      entity_category: diagnostic
-    flow_rate_out_of_range:
-      name: Flow rate out of range
-      entity_category: diagnostic
 ```
+
+The file also declares the four `ufm01` diagnostic binary sensors — `ufc_chip_error`, `flow_direction_wrong`, `empty_tube` and `flow_rate_out_of_range` — as `entity_category: diagnostic`.
 
 These are the Home Assistant entities the subflows need:
 
