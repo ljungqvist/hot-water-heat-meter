@@ -108,7 +108,7 @@ UFM-01 is 5 V, UART **2400 8E1**. The ESP32 is 3.3 V.
 
 *One way to lay it out. GND and GPIO35 sit level with each other, so the divider becomes a straight run: ground wire, 2 kΩ, junction, GPIO35 — with the 1 kΩ branching up from that junction into the UFM's TX wire. The 10 µF bridges 5 V and GND, and the 5.1 kΩ goes from 3V3 to GPIO16. Power and ground leave one side, the three signals the other. Only the pins used are labelled, and both headers carry on below the frame.*
 
-Same idea on any other board; only the GPIO numbers change.
+Same idea on any other board; only the GPIO numbers change. Check yours before wiring, though — the variants differ, and on the ESP32-PoE-WROVER, GPIO16 is taken by the module itself and never reaches the header. Any free bidirectional pin will do for the Dallas instead, GPIO13 say; just not GPIO34–39, which are input-only and cannot drive a one-wire bus.
 
 ---
 
