@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="510" viewBox="0 0 920 510" font-family="Helvetica, Arial, sans-serif">
-  <rect width="920" height="510" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="990" height="510" viewBox="-70 0 990 510" font-family="Helvetica, Arial, sans-serif">
+  <rect x="-70" y="0" width="990" height="510" fill="#ffffff"/>
 
   <!-- board: runs off the bottom of the frame, the headers carry on below -->
   <path d="M270,80 L650,80 A10,10 0 0 1 660,90 L660,550 L260,550 L260,90 A10,10 0 0 1 270,80 Z"
@@ -49,7 +49,7 @@
     <path d="M290,230 L150,230" stroke="#333"/>
     <path d="M290,230 L430,230" stroke="#333"/>
     <path d="M490,230 L630,230" stroke="#333"/>
-    <!-- 1k branching up from the junction to the UFM TX wire -->
+    <!-- 1k branching up from the junction to the UFM-01 TX wire -->
     <path d="M540,230 L540,210" stroke="#333"/>
     <path d="M540,150 L540,130 L800,130" stroke="#333"/>
     <!-- 10 uF legs -->
@@ -94,13 +94,13 @@
 
   <!-- external labels -->
   <g font-size="13" fill="#111" text-anchor="end">
-    <text x="142" y="114">UFM 5 V</text>
-    <text x="142" y="174">Dallas 3V3</text>
-    <text x="142" y="234">UFM GND + Dallas GND</text>
+    <text x="142" y="114">UFM-01 5 V</text>
+    <text x="142" y="174">DS18B20 3V3</text>
+    <text x="142" y="234">UFM-01 + DS18B20 GND</text>
   </g>
   <g font-size="13" fill="#111">
-    <text x="808" y="134">UFM TX</text>
-    <text x="808" y="354">UFM RX</text>
-    <text x="808" y="414">Dallas DATA</text>
+    <text x="808" y="134">UFM-01 TX</text>
+    <text x="808" y="354">UFM-01 RX</text>
+    <text x="808" y="414">DS18B20 DATA</text>
   </g>
 </svg>
