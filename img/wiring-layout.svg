@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="510" viewBox="0 0 920 510" font-family="Helvetica, Arial, sans-serif">
+  <rect width="920" height="510" fill="#ffffff"/>
+
+  <!-- board: runs off the bottom of the frame, the headers carry on below -->
+  <path d="M270,80 L650,80 A10,10 0 0 1 660,90 L660,550 L260,550 L260,90 A10,10 0 0 1 270,80 Z"
+        fill="#f7e4e4" stroke="#a85555" stroke-width="2.5"/>
+  <text x="460" y="66" font-size="15" font-weight="bold" fill="#111" text-anchor="middle">ESP32-PoE — top view</text>
+
+  <!-- unused header pads -->
+  <g fill="#cbb4b4" stroke="#a85555" stroke-width="1.5">
+    <rect x="283" y="283" width="14" height="14" rx="2"/>
+    <rect x="283" y="343" width="14" height="14" rx="2"/>
+    <rect x="283" y="403" width="14" height="14" rx="2"/>
+    <rect x="283" y="463" width="14" height="14" rx="2"/>
+    <rect x="623" y="103" width="14" height="14" rx="2"/>
+    <rect x="623" y="163" width="14" height="14" rx="2"/>
+    <rect x="623" y="283" width="14" height="14" rx="2"/>
+    <rect x="623" y="463" width="14" height="14" rx="2"/>
+  </g>
+
+  <!-- used header pads -->
+  <g fill="#ffffff" stroke="#333" stroke-width="2.5">
+    <rect x="283" y="103" width="14" height="14" rx="2"/>
+    <rect x="283" y="163" width="14" height="14" rx="2"/>
+    <rect x="283" y="223" width="14" height="14" rx="2"/>
+    <rect x="623" y="223" width="14" height="14" rx="2"/>
+    <rect x="623" y="343" width="14" height="14" rx="2"/>
+    <rect x="623" y="403" width="14" height="14" rx="2"/>
+  </g>
+
+  <!-- pin names -->
+  <g font-size="13" font-weight="bold" fill="#111">
+    <text x="308" y="102">5V</text>
+    <text x="308" y="162">3V3</text>
+    <text x="308" y="222">GND</text>
+  </g>
+  <g font-size="13" font-weight="bold" fill="#111" text-anchor="end">
+    <text x="612" y="212">GPIO35</text>
+    <text x="612" y="342">GPIO32</text>
+    <text x="612" y="402">GPIO16</text>
+  </g>
+
+  <!-- wires -->
+  <g stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M290,110 L150,110" stroke="#c0392b"/>
+    <path d="M290,170 L150,170" stroke="#2471a3"/>
+    <path d="M290,170 L340,170 L340,410 L430,410" stroke="#2471a3"/>
+    <!-- ground out, and the run through the divider to GPIO35 -->
+    <path d="M290,230 L150,230" stroke="#333"/>
+    <path d="M290,230 L430,230" stroke="#333"/>
+    <path d="M490,230 L630,230" stroke="#333"/>
+    <!-- 1k branching up from the junction to the UFM TX wire -->
+    <path d="M540,230 L540,210" stroke="#333"/>
+    <path d="M540,150 L540,130 L800,130" stroke="#333"/>
+    <!-- 10 uF legs -->
+    <path d="M290,110 L370,110 L370,168" stroke="#333"/>
+    <path d="M370,182 L370,230" stroke="#333"/>
+    <!-- signals out -->
+    <path d="M630,350 L800,350" stroke="#333"/>
+    <path d="M490,410 L630,410" stroke="#333"/>
+    <path d="M630,410 L800,410" stroke="#333"/>
+  </g>
+
+  <!-- capacitor -->
+  <g stroke="#333" stroke-width="2.5" stroke-linecap="round">
+    <line x1="352" y1="168" x2="388" y2="168"/>
+    <line x1="352" y1="182" x2="388" y2="182"/>
+  </g>
+  <text x="396" y="180" font-size="13" fill="#111">10 µF</text>
+
+  <!-- resistors -->
+  <g fill="#ffffff" stroke="#333" stroke-width="2.5">
+    <rect x="430" y="212" width="60" height="36" rx="3"/>
+    <rect x="522" y="150" width="36" height="60" rx="3"/>
+    <rect x="430" y="392" width="60" height="36" rx="3"/>
+  </g>
+  <g font-size="13" fill="#111">
+    <text x="460" y="235" text-anchor="middle">2 k</text>
+    <text x="540" y="185" text-anchor="middle">1 k</text>
+    <text x="460" y="415" text-anchor="middle">5.1 k</text>
+  </g>
+
+  <!-- junction dots -->
+  <g fill="#333">
+    <circle cx="290" cy="110" r="4.5"/>
+    <circle cx="290" cy="170" r="4.5"/>
+    <circle cx="290" cy="230" r="4.5"/>
+    <circle cx="370" cy="230" r="4.5"/>
+    <circle cx="540" cy="230" r="4.5"/>
+    <circle cx="630" cy="230" r="4.5"/>
+    <circle cx="630" cy="350" r="4.5"/>
+    <circle cx="630" cy="410" r="4.5"/>
+  </g>
+
+  <!-- external labels -->
+  <g font-size="13" fill="#111" text-anchor="end">
+    <text x="142" y="114">UFM 5 V</text>
+    <text x="142" y="174">Dallas 3V3</text>
+    <text x="142" y="234">UFM GND + Dallas GND</text>
+  </g>
+  <g font-size="13" fill="#111">
+    <text x="808" y="134">UFM TX</text>
+    <text x="808" y="354">UFM RX</text>
+    <text x="808" y="414">Dallas DATA</text>
+  </g>
+</svg>

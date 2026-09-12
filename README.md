@@ -100,6 +100,14 @@ UFM-01 is 5 V, UART **2400 8E1**. The ESP32 is 3.3 V.
 - UFM TX → 1 kΩ → GPIO35 (RX) → 2 kΩ → GND. GPIO35 is input-only, which is why it is RX.
 - DS18B20: 3.3 V, GND, data on GPIO16, 5.1 kΩ to 3.3 V.
 
+![Schematic: ESP32-PoE on the left, UFM-01 and DS18B20 on the right, with a 10 µF across the 5 V supply, a 1 kΩ and 2 kΩ divider into GPIO35, and a 5.1 kΩ pull-up on the one-wire data line](img/wiring-schematic.svg)
+
+*The circuit. The only part that needs care is the divider: the UFM drives its TX at 5 V, so the 1 kΩ goes in series and the 2 kΩ from GPIO35 to ground, which lands the pin at about 3.3 V. Wire those two the other way round and the pin sees the full 5 V.*
+
+![The same wiring drawn on a top view of the board, showing which header pad each component and wire lands on](img/wiring-layout.svg)
+
+*One way to lay it out. GND and GPIO35 sit level with each other, so the divider becomes a straight run: ground wire, 2 kΩ, junction, GPIO35 — with the 1 kΩ branching up from that junction into the UFM's TX wire. The 10 µF bridges 5 V and GND, and the 5.1 kΩ goes from 3V3 to GPIO16. Power and ground leave one side, the three signals the other. Only the pins used are labelled, and both headers carry on below the frame.*
+
 Same idea on any other board; only the GPIO numbers change.
 
 ---
