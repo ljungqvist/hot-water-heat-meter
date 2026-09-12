@@ -25,7 +25,7 @@ ota:
 
 # UFM-01: 5 V + GND, 10 µF across 5 V–GND.
 # ESP32 TX (GPIO32) → UFM RX.
-# UFM TX → 1 kΩ → ESP32 RX (GPIO35) → 2 kΩ → GND (divider).
+# UFM TX → 10 kΩ → ESP32 RX (GPIO35) → 30 kΩ → GND (divider).
 # UART: 2400 8E1.
 uart:
   - id: uart_bus

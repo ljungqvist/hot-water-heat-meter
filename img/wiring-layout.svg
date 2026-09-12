@@ -51,7 +51,7 @@
     <path d="M290,230 L150,230" stroke="#333"/>
     <path d="M290,230 L430,230" stroke="#333"/>
     <path d="M490,230 L630,230" stroke="#333"/>
-    <!-- 1k branching up from the junction to the UFM-01 TX wire -->
+    <!-- 10k branching up from the junction to the UFM-01 TX wire -->
     <path d="M540,230 L540,210" stroke="#333"/>
     <path d="M540,150 L540,130 L800,130" stroke="#333"/>
     <!-- 10 uF legs -->
@@ -77,8 +77,8 @@
     <rect x="430" y="452" width="60" height="36" rx="3"/>
   </g>
   <g font-size="13" fill="#111">
-    <text x="460" y="235" text-anchor="middle">2 k</text>
-    <text x="540" y="185" text-anchor="middle">1 k</text>
+    <text x="460" y="235" text-anchor="middle">30 k</text>
+    <text x="540" y="185" text-anchor="middle">10 k</text>
     <text x="460" y="475" text-anchor="middle">5.1 k</text>
   </g>
 

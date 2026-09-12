@@ -52,7 +52,7 @@ I had an electrician do the mains and a plumber do the tank connections.
 | ScioSense UFM-01 | Accumulated flow (L) + **cold temperature** |
 | DS18B20 | **Hot temperature** (pipe surface) |
 | 10 µF on UFM 5 V–GND | Supply bypass |
-| 1 kΩ + 2 kΩ | UART 5 V → 3.3 V divider on ESP32 RX |
+| 10 kΩ + 30 kΩ | UART 5 V → 3.3 V divider on ESP32 RX |
 | 5.1 kΩ | Dallas pull-up to 3.3 V |
 | Energy sensor, increasing, in kWh | **Input energy** (I used three Shelly Pro 2PM) |
 
@@ -97,16 +97,20 @@ UFM-01 is 5 V, UART **2400 8E1**. The ESP32 is 3.3 V.
 
 - UFM 5 V and GND. 10 µF across 5 V–GND.
 - GPIO32 (TX) → UFM RX.
-- UFM TX → 1 kΩ → GPIO35 (RX) → 2 kΩ → GND. GPIO35 is input-only, which is why it is RX.
+- UFM TX → 10 kΩ → GPIO35 (RX) → 30 kΩ → GND. GPIO35 is input-only, which is why it is RX.
 - DS18B20: 3.3 V, GND, data on GPIO16, 5.1 kΩ to 3.3 V.
 
-![Schematic: ESP32-PoE on the left, UFM-01 and DS18B20 on the right, with a 10 µF across the 5 V supply, a 1 kΩ and 2 kΩ divider into GPIO35, and a 5.1 kΩ pull-up on the one-wire data line](img/wiring-schematic.svg)
+![Schematic: ESP32-PoE on the left, UFM-01 and DS18B20 on the right, with a 10 µF across the 5 V supply, a 10 kΩ and 30 kΩ divider into GPIO35, and a 5.1 kΩ pull-up on the one-wire data line](img/wiring-schematic.svg)
 
-*The circuit. The only part that needs care is the divider: the UFM drives its TX at 5 V, so the 1 kΩ goes in series and the 2 kΩ from GPIO35 to ground, which lands the pin at about 3.3 V. Wire those two the other way round and the pin sees the full 5 V.*
+*The circuit. The divider is the only part that needs care, and the values matter more than they look: the 10 kΩ goes in series from the UFM's TX, the 30 kΩ from GPIO35 to ground. Wire those two the other way round and the pin sees far more than it should.*
+
+**Why 10 kΩ and 30 kΩ and not something smaller.** The UFM-01's TX is a weak output. It reaches its full 5 V with nothing attached, but it sags badly as soon as you draw current — on both of my meters it measured about 2.9 kΩ of effective source impedance. A 1 kΩ / 2 kΩ divider presents 3 kΩ to that, which throws away half the signal before it starts: I measured 2.4 V at the TX pin and 1.6 V at the ESP, below the level the ESP32 is guaranteed to read as a high. One meter failed outright and the other silently dropped about a quarter of its frames. At 10 kΩ / 30 kΩ the load is thirteen times lighter, and the same two meters give 3.7–4.1 V at TX and 2.8–3.1 V at the pin, comfortably in spec. There is no speed cost: at 2400 baud a bit lasts 416 µs and this network settles in under a microsecond.
+
+**Worth checking once, when you build it.** With the divider fitted and the meter idle, measure the UFM's TX pin against ground. Three quarters of whatever you read is what the ESP sees. Above about 2.5 V is fine; much below that and it will be unreliable in a way that looks like a flaky meter rather than a wiring problem — increase both resistors, keeping the 1:3 ratio.
 
 ![The same wiring drawn on a top view of the board, showing which header pad each component and wire lands on](img/wiring-layout.svg)
 
-*One way to lay it out. GND and GPIO35 sit level with each other, so the divider becomes a straight run: ground wire, 2 kΩ, junction, GPIO35 — with the 1 kΩ branching up from that junction into the UFM's TX wire. The 10 µF bridges 5 V and GND, and the 5.1 kΩ goes from 3V3 to GPIO16. Power and ground leave one side, the three signals the other. Only the pins used are labelled, and both headers carry on below the frame.*
+*One way to lay it out. GND and GPIO35 sit level with each other, so the divider becomes a straight run: ground wire, 30 kΩ, junction, GPIO35 — with the 10 kΩ branching up from that junction into the UFM's TX wire. The 10 µF bridges 5 V and GND, and the 5.1 kΩ goes from 3V3 to GPIO16. Power and ground leave one side, the three signals the other. Only the pins used are labelled, and both headers carry on below the frame.*
 
 Same idea on any other board; only the GPIO numbers change. Check yours before wiring, though — the variants differ, and on the ESP32-PoE-WROVER, GPIO16 is taken by the module itself and never reaches the header. Any free bidirectional pin will do for the Dallas instead, GPIO13 say; just not GPIO34–39, which are input-only and cannot drive a one-wire bus.
 
@@ -123,7 +127,7 @@ Most of that file is boilerplate: board, Ethernet, `logger`, `api`, `ota`. This 
 ```yaml
 # UFM-01: 5 V + GND, 10 µF across 5 V–GND.
 # ESP32 TX (GPIO32) → UFM RX.
-# UFM TX → 1 kΩ → ESP32 RX (GPIO35) → 2 kΩ → GND (divider).
+# UFM TX → 10 kΩ → ESP32 RX (GPIO35) → 30 kΩ → GND (divider).
 # UART: 2400 8E1.
 uart:
   - id: uart_bus
