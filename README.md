@@ -244,11 +244,11 @@ $eInKWh := $eInJ / 1000 / 3600;
 
 The delay node is 15 s in the JSON I attached. Change it after you look at your graph.
 
+![Two stacked one-minute traces: temperatures above, the hot line climbing from 31 to 51 degrees; flow below, starting fifteen seconds before the hot line settles](img/draw-lag.png)
+
+*One draw, one minute. Flow starts at :05 and stops at :34. The hot pipe begins at 31 °C — water that had been standing in it — and does not reach the tank's real 51 °C until about :20, fifteen seconds after the water started moving. That fifteen seconds is what the delay node waits out. The cold line sags over the same stretch as mains water arrives and pushes out the water that had warmed up in the inlet. Plot this on your own pipes and read your own number off it.*
+
 Only increases count, which is what makes restarts safe. If the meter or Node-RED restarts and accumulated flow goes back to zero, that arrives as a single negative step, it is dropped, and counting resumes from the new value. You lose at most the water drawn while it was away.
-
-![A one-minute temperature trace: the hot line climbs from 31 to 51 degrees over about fifteen seconds while the cold line falls from 20 to 16](img/draw-lag.png)
-
-*One draw, one minute. The hot pipe starts at 31 °C — water that had been standing in it — and takes about fifteen seconds to reach the tank's real 51 °C. That is what the delay node waits out. The cold line falls over the same stretch as mains water arrives and pushes out the water that had warmed up in the inlet. Plot this on your own pipes and read your own number off it.*
 
 ### Energy balance
 
@@ -340,9 +340,9 @@ I had a working prototype in November 2024 and both production tanks from the en
 
 I do not correct the account by hand in normal operation. I did that while commissioning and when something was broken. In operation the 0-clamp *is* the calibration, because the balance is a little on the positive side.
 
-**The bottom of the scale depends on how you got there.** That is the tank, not the meter. Come down from full in one go — a bath, or showers back to back — and there is little mixing, especially in a vertical tank: the top stays hot, and you will still be drawing hot water well below 0 %. Drift down slowly instead, with no heating for a long time, and the whole tank cools together; you can be sitting at 20 % with water that is already disappointing. Same number, different water. Nothing here can fix that, and it is worth knowing before you trust that last stretch. It has happened a handful of times here in eighteen months: rare, but not theoretical.
+**The bottom of the scale depends on how you got there.** That is the tank, not the meter. Come down from full in one go — a bath, or showers back to back — and there is little mixing, especially in a vertical tank: the top stays hot, and you will still be drawing hot water well below 0 %. Drift down slowly instead, with no heating for a long time, and the whole tank cools together; you can be sitting at 20 % with water that is already disappointing. Same number, different water. Nothing here can fix that, and it is worth knowing before you trust that last stretch. Charge below 0 % has happened a handful of times here in eighteen months: rare, but not theoretical.
 
-The YAML in this article is for the Ethernet board (ESP32-PoE). The same sensors ran on a D1 mini first, and I also run one tank on an ESP32-C6 (Thread). The UART divider and Dallas pull-up stay; GPIOs change.
+The config linked above is for the Ethernet board (ESP32-PoE). The same sensors ran on a D1 mini first, and I also run one tank on an ESP32-C6 (Thread). The UART divider and Dallas pull-up stay; GPIOs change.
 
 **Shower counter (application, not required).** Hot water usage is already an energy debit. Accumulating `−payload` into a counter made draws visible. That got my kids to use a lot less water. Add that node on the output of Hot water usage if you want it; it is not part of the heat meter.
 
