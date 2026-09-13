@@ -362,6 +362,24 @@ That is the box at the top of this article: a D1 mini, one eight-digit MAX7219 d
 
 ---
 
+## The newer UFM-02
+
+ScioSense now sell a **UFM-02**, and for a new installation I would probably pick it over the UFM-01. That is a recommendation from the datasheet, not from use — I have not had one in my hands.
+
+What looks better. It comes in four sizes, G3/8″ to G1½″, where the UFM-01 is ½″ only, so you can match the meter to the pipe rather than the other way round. It resolves flow down to 0.03 l/min, against the UFM-01's 10 l/h floor. It publishes a water temperature accuracy of ±1 °C where the UFM-01 publishes none — which matters here, because that temperature goes straight into the energy sum. It is NSF61 certified for drinking water. And it draws 50 µA against the UFM-01's 2 mA, which is transformative on a battery and irrelevant on mains.
+
+What is not better. The water temperature limit is still **0–60 °C**, so it does not let you move the meter to the hot side. Flow accuracy is much the same: about 5 % at higher flows, 10 % at low ones.
+
+**The catch is the interface.** The UFM-01 speaks UART; the UFM-02 does not speak it at all. It offers a 4-wire pulse output or a 10-wire SPI interface, so the `ufm01` component cannot drive it — this is not a dialect difference, it is a different conversation. As of writing there is no ESPHome component for the UFM-02.
+
+That is a smaller obstacle than it sounds, because **the pulse output needs no component at all.** It is an ordinary pulse train — 200 pulses per litre on the ½″ size — and ESPHome's built-in `pulse_meter` turns that into both a running total and a flow rate. The outputs are open-drain and rated to 60 V, so you pull one up to 3.3 V and wire it straight to a GPIO: no UART, no 5 V logic, and no divider. Given how much of the trouble in this article lives in that divider, that may be the best argument for the UFM-02 of all.
+
+What you give up on the pulse cable is the temperature — it carries flow only — and that is a real loss rather than a swap. The UFM measures the water itself, from inside the pipe. Replacing it with a DS18B20 clamped to the outside of the cold pipe is the same compromise this article already grumbles about on the hot side: a sensor inside the pipe reads faster and truer. So the pulse route buys simpler wiring at the price of a worse cold-temperature reading. The SPI cable carries volume, flow rate and temperature together and keeps it, but someone has to write that component first.
+
+The datasheet is still marked *Product Preview*, so check the numbers before you commit to them.
+
+---
+
 ## Files
 
 | File | What |
